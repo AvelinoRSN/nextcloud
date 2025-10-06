@@ -1,20 +1,16 @@
 services:
   nc:
-    build: .
+    image: nextcloud:apache
     environment:
       - POSTGRES_HOST=db
       - POSTGRES_PASSWORD=nextcloud
       - POSTGRES_DB=nextcloud
       - POSTGRES_USER=nextcloud
-      - NEXTCLOUD_ADMIN_USER=admin
-      - NEXTCLOUD_ADMIN_PASSWORD=admin123
     ports:
       - 80:80
     restart: always
     volumes:
       - nc_data:/var/www/html
-    depends_on:
-      - db
   db:
     image: postgres:alpine
     environment:
@@ -24,10 +20,8 @@ services:
     restart: always
     volumes:
       - db_data:/var/lib/postgresql/data
-      - ./migrations:/docker-entrypoint-initdb.d:ro
     expose:
       - 5432
-
 volumes:
   db_data:
   nc_data:

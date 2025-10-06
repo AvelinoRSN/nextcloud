@@ -1,0 +1,35 @@
+# Arquivos e pastas a serem ignorados no build
+.git
+.gitignore
+README.md
+*.md
+*.log
+*.tmp
+
+# Arquivos de backup e migração
+backup_*
+migrate_*
+*.sql
+*.zip
+
+# Scripts PowerShell e Bash
+*.ps1
+*.sh
+*.bat
+
+# Arquivos de configuração local
+compose.yml
+configure_apache_nextcloud.conf
+
+# Docker volumes e dados
+docker_volumes.txt
+
+# Arquivos temporários
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Logs
+logs/
+*.log
