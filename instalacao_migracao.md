@@ -119,16 +119,46 @@ ECR_REGISTRY=380278406175.dkr.ecr.us-east-1.amazonaws.com
 
 ### **3. Build e Execução Local**
 
+#### **Build da Imagem Personalizada**
+
 ```bash
-# Build da imagem
+# Build da imagem usando o Dockerfile personalizado
 docker build -t nextcloud-custom:latest .
 
+# Verificar se a imagem foi criada
+docker images | grep nextcloud-custom
+
+# Build com cache (para builds subsequentes)
+docker build --cache-from nextcloud-custom:latest -t nextcloud-custom:latest .
+```
+
+#### **Execução com Docker Compose**
+
+```bash
 # Executar com Docker Compose
 docker-compose up -d
 
-# Verificar status
+# Verificar status dos containers
 docker-compose ps
+
+# Verificar logs em tempo real
 docker-compose logs -f
+
+# Verificar logs específicos do Nextcloud
+docker-compose logs -f nextcloud
+```
+
+#### **Verificação da Instalação**
+
+```bash
+# Verificar se os scripts estão disponíveis no container
+docker-compose exec nextcloud ls -la /usr/local/bin/ | grep -E "(init-migration|restore-database|backup-database)"
+
+# Verificar diretórios de backup/restore
+docker-compose exec nextcloud ls -la /opt/backups /opt/restores
+
+# Testar conectividade com banco
+docker-compose exec nextcloud pg_isready -h db -p 5432 -U nextcloud
 ```
 
 ### **4. Acesso Local**
@@ -166,7 +196,68 @@ nextcloud/
 └── nextcloud/              # Código fonte
 ```
 
-### **2. Configuração de Migrações e Restore**
+### **2. Dockerfile Personalizado**
+
+#### **Estrutura e Funcionalidades**
+
+O Dockerfile personalizado foi desenvolvido especificamente para este projeto Nextcloud, incorporando funcionalidades avançadas de migração, backup e restore:
+
+```dockerfile
+# Dockerfile unificado para Nextcloud com migrações e restore
+FROM nextcloud:apache
+
+# Instalar dependências necessárias
+RUN apt-get update && apt-get install -y \
+    postgresql-client \
+    curl \
+    wget \
+    unzip \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copiar arquivos da aplicação Nextcloud
+COPY nextcloud/ /var/www/html/
+
+# Copiar e configurar migrações
+COPY migrations/ /docker-entrypoint-initdb.d/
+
+# Copiar scripts de migração e restore
+COPY init-migration.sh /usr/local/bin/
+COPY restore-database.sh /usr/local/bin/
+COPY backup-database.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/init-migration.sh \
+    && chmod +x /usr/local/bin/restore-database.sh \
+    && chmod +x /usr/local/bin/backup-database.sh
+
+# Criar diretórios para backups e restores
+RUN mkdir -p /opt/backups \
+    && mkdir -p /opt/restores \
+    && chmod 755 /opt/backups \
+    && chmod 755 /opt/restores
+
+# Definir permissões corretas
+RUN chown -R www-data:www-data /var/www/html \
+    && chmod -R 755 /var/www/html
+
+# Expor porta 80
+EXPOSE 80
+
+# Script de inicialização com migrações e restore
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+CMD ["apache2-foreground"]
+```
+
+#### **Características Principais**
+
+- **Base**: Utiliza a imagem oficial `nextcloud:apache` como base
+- **Dependências**: Instala PostgreSQL client, curl, wget e unzip
+- **Migrações Automáticas**: Copia scripts SQL para `/docker-entrypoint-initdb.d/`
+- **Scripts Integrados**: Inclui scripts de migração, backup e restore
+- **Diretórios de Trabalho**: Cria `/opt/backups` e `/opt/restores` para gerenciamento
+- **Permissões**: Configura ownership e permissões corretas para www-data
+- **Entrypoint Customizado**: Utiliza script personalizado para inicialização
 
 #### **Scripts de Migração**
 
@@ -188,13 +279,56 @@ CREATE TABLE IF NOT EXISTS oc_custom_settings (
 CREATE INDEX idx_custom_settings_user ON oc_custom_settings(user_id);
 ```
 
-#### **Funcionalidades de Restore**
+#### **Funcionalidades de Backup e Restore**
 
-O Dockerfile agora inclui scripts avançados de backup e restore:
+O Dockerfile integra scripts avançados de backup e restore:
 
 - **`restore-database.sh`**: Script completo de restore com múltiplas opções
 - **`backup-database.sh`**: Script de backup com diferentes formatos
 - **Diretórios**: `/opt/backups` e `/opt/restores` para gerenciamento de arquivos
+- **Integração**: Scripts são executados automaticamente durante inicialização
+
+#### **Otimizações do Dockerfile**
+
+```dockerfile
+# Otimizações para produção
+# 1. Usar multi-stage build para reduzir tamanho
+# 2. Cache de layers para builds mais rápidos
+# 3. Limpeza de cache APT
+# 4. Permissões mínimas necessárias
+
+# Exemplo de build otimizado
+docker build \
+  --build-arg BUILDKIT_INLINE_CACHE=1 \
+  --cache-from nextcloud-custom:latest \
+  -t nextcloud-custom:latest \
+  .
+```
+
+#### **Variáveis de Ambiente Suportadas**
+
+O Dockerfile personalizado suporta as seguintes variáveis de ambiente:
+
+```bash
+# Configurações de Banco de Dados
+POSTGRES_HOST=db
+POSTGRES_USER=nextcloud
+POSTGRES_PASSWORD=nextcloud123
+POSTGRES_DB=nextcloud
+
+# Configurações do Nextcloud
+NEXTCLOUD_ADMIN_USER=admin
+NEXTCLOUD_ADMIN_PASSWORD=admin123
+TRUSTED_DOMAINS=localhost
+
+# Configurações de Restore
+RESTORE_BACKUP_FILE=/opt/restores/backup.dump
+CREATE_INITIAL_BACKUP=true
+
+# Configurações de Backup
+BACKUP_FORMAT=dump
+BACKUP_COMPRESSION=true
+```
 
 ### **3. Scripts de Inicialização**
 
@@ -1495,6 +1629,44 @@ docker-compose config
 
 # Verificar recursos
 docker stats
+
+# Verificar se a imagem foi construída corretamente
+docker images nextcloud-custom
+
+# Verificar layers da imagem
+docker history nextcloud-custom:latest
+```
+
+#### **Problemas com Dockerfile**
+
+```bash
+# Build falha
+docker build --no-cache -t nextcloud-custom:latest .
+
+# Verificar se todos os arquivos estão presentes
+ls -la init-migration.sh restore-database.sh backup-database.sh
+
+# Verificar permissões dos scripts
+chmod +x init-migration.sh restore-database.sh backup-database.sh
+
+# Build com verbose output
+docker build --progress=plain -t nextcloud-custom:latest .
+```
+
+#### **Problemas com Scripts Integrados**
+
+```bash
+# Verificar se scripts estão no container
+docker-compose exec nextcloud ls -la /usr/local/bin/ | grep -E "(init-migration|restore-database|backup-database)"
+
+# Executar script manualmente
+docker-compose exec nextcloud /usr/local/bin/init-migration.sh
+
+# Verificar permissões dos scripts no container
+docker-compose exec nextcloud ls -la /usr/local/bin/init-migration.sh
+
+# Verificar diretórios de backup/restore
+docker-compose exec nextcloud ls -la /opt/backups /opt/restores
 ```
 
 #### **Migrações falham**
@@ -1568,6 +1740,53 @@ docker-compose up -d
 # Limpeza Docker
 docker system prune -f
 docker volume prune -f
+
+# Rebuild da imagem personalizada
+docker build --no-cache -t nextcloud-custom:latest .
+docker-compose up -d --build
+```
+
+### **1.1. Manutenção do Dockerfile**
+
+#### **Atualização da Imagem Base**
+
+```bash
+# Verificar versões disponíveis da imagem base
+docker search nextcloud
+
+# Atualizar Dockerfile para nova versão
+# Editar: FROM nextcloud:apache -> FROM nextcloud:apache-version
+
+# Rebuild com nova versão
+docker build --no-cache -t nextcloud-custom:latest .
+```
+
+#### **Otimização de Build**
+
+```bash
+# Build com cache multi-stage
+docker buildx build \
+  --platform linux/amd64 \
+  --cache-from type=local,src=/tmp/.buildx-cache \
+  --cache-to type=local,dest=/tmp/.buildx-cache \
+  -t nextcloud-custom:latest .
+
+# Verificar tamanho da imagem
+docker images nextcloud-custom
+docker history nextcloud-custom:latest
+```
+
+#### **Limpeza de Imagens**
+
+```bash
+# Remover imagens antigas
+docker image prune -a
+
+# Remover imagens específicas
+docker rmi nextcloud-custom:old-tag
+
+# Limpeza completa do sistema
+docker system prune -a --volumes
 ```
 
 ### **2. Backup de Manutenção**
