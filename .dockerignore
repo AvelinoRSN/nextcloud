@@ -14,8 +14,11 @@ migrate_*
 
 # Scripts PowerShell e Bash
 *.ps1
-*.sh
 *.bat
+
+# Exclude specific backup scripts but keep required ones
+backup_migration.sh
+backup_restore_exemplo.sh
 
 # Arquivos de configuração local
 compose.yml

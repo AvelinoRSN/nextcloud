@@ -9,11 +9,7 @@ RUN apt-get update && apt-get install -y \
     unzip \
     && rm -rf /var/lib/apt/lists/*
 
-# Copiar arquivos da aplicação Nextcloud
-COPY nextcloud/ /var/www/html/
-
-# Copiar e configurar migrações
-COPY migrations/ /docker-entrypoint-initdb.d/
+# Nextcloud files will be handled by the base image
 
 # Copiar scripts de migração e restore
 COPY init-migration.sh /usr/local/bin/

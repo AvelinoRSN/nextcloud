@@ -5,6 +5,9 @@ set -e
 
 echo "=== INICIANDO MIGRAÇÕES DE BANCO ==="
 
+# Definir senha do PostgreSQL
+export PGPASSWORD="$POSTGRES_PASSWORD"
+
 # Aguardar o banco de dados estar disponível
 echo "Aguardando banco de dados..."
 until pg_isready -h "$POSTGRES_HOST" -p 5432 -U "$POSTGRES_USER"; do
