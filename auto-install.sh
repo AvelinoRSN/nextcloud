@@ -27,7 +27,13 @@ END
 
 # Criar banco se não existir
 PGPASSWORD="$POSTGRES_PASSWORD" psql -h "$POSTGRES_HOST" -U postgres -d postgres -c "
-SELECT 'CREATE DATABASE $POSTGRES_DB' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = '$POSTGRES_DB')\gexec
+DO \$\$
+BEGIN
+    IF NOT EXISTS (SELECT FROM pg_database WHERE datname = '$POSTGRES_DB') THEN
+        EXECUTE 'CREATE DATABASE $POSTGRES_DB';
+    END IF;
+END
+\$\$;
 "
 
 # Dar permissões
@@ -38,6 +44,31 @@ GRANT ALL ON SCHEMA public TO $POSTGRES_USER;
 
 # Verificar se Nextcloud já está instalado
 if [ ! -f /var/www/html/config/config.php ]; then
+    echo "Aguardando Nextcloud estar pronto..."
+    echo "Isso pode levar alguns minutos na primeira execução..."
+    
+    # Aguardar o arquivo occ estar disponível
+    counter=0
+    while [ ! -f /var/www/html/occ ]; do
+        counter=$((counter + 1))
+        echo "⏳ Aguardando inicialização do Nextcloud... (${counter}0s)"
+        sleep 10
+        
+        if [ $counter -gt 30 ]; then
+            echo "❌ Timeout aguardando Nextcloud. Verificando se Apache está rodando..."
+            ps aux | grep apache2 || echo "Apache não está rodando"
+            ls -la /var/www/html/ | head -10
+            break
+        fi
+    done
+    
+    if [ -f /var/www/html/occ ]; then
+        echo "✅ Nextcloud pronto! Iniciando instalação..."
+    else
+        echo "❌ Erro: Nextcloud não inicializou corretamente"
+        exit 1
+    fi
+    
     echo "Instalando Nextcloud..."
     
     # Instalar via OCC

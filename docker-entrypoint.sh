@@ -27,12 +27,16 @@ if [ "$CREATE_INITIAL_BACKUP" = "true" ]; then
     echo "Backup inicial concluído!"
 fi
 
+# Iniciar Apache em background
+echo "Iniciando Apache..."
+/entrypoint.sh "$@" &
+APACHE_PID=$!
+
 # Executar auto-instalação se habilitada
 if [ "$AUTO_INSTALL" = "true" ]; then
-    echo "Executando auto-instalação..."
-    /usr/local/bin/auto-install.sh
+    echo "Executando auto-instalação em paralelo..."
+    /usr/local/bin/auto-install.sh &
 fi
 
-# Executar o entrypoint original do Nextcloud
-echo "Iniciando Nextcloud..."
-exec /entrypoint.sh "$@"
+# Aguardar o Apache
+wait $APACHE_PID

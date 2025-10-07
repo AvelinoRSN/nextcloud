@@ -5,13 +5,12 @@ services:
       - POSTGRES_HOST=next-cloud-db-v3.co308c48ebbz.us-east-1.rds.amazonaws.com
       - POSTGRES_PASSWORD=5PCTu2aNuilrpWPs2u8V
       - POSTGRES_DB=nextcloud
-      - POSTGRES_USER=postgres
-      - POSTGRES_USER_PASSWORD=5PCTu2aNuilrpWPs2u8V
+      - POSTGRES_USER=nextcloud_user
+      - POSTGRES_USER_PASSWORD=nextcloud123
       - NEXTCLOUD_ADMIN_USER=admin
       - NEXTCLOUD_ADMIN_PASSWORD=admin123
-      - NEXTCLOUD_TRUSTED_DOMAINS=localhost 3.84.201.243
+      - NEXTCLOUD_TRUSTED_DOMAINS=localhost 54.156.72.54
       - AUTO_INSTALL=true
-      - POSTGRES_SSL_MODE=disable
     ports:
       - 80:80
     restart: always
