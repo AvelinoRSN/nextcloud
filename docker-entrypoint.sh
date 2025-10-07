@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Script de entrypoint unificado com migrações e restore
+# Script de entrypoint unificado com migrações, restore e auto-instalação
 set -e
 
 echo "=== INICIANDO NEXTCLOUD COM MIGRAÇÕES E RESTORE ==="
@@ -25,6 +25,12 @@ if [ "$CREATE_INITIAL_BACKUP" = "true" ]; then
     echo "Criando backup inicial..."
     /usr/local/bin/backup-database.sh -o "/opt/backups/initial_backup_$(date +%Y%m%d_%H%M%S).dump"
     echo "Backup inicial concluído!"
+fi
+
+# Executar auto-instalação se habilitada
+if [ "$AUTO_INSTALL" = "true" ]; then
+    echo "Executando auto-instalação..."
+    /usr/local/bin/auto-install.sh
 fi
 
 # Executar o entrypoint original do Nextcloud

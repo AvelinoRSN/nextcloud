@@ -9,15 +9,15 @@ RUN apt-get update && apt-get install -y \
     unzip \
     && rm -rf /var/lib/apt/lists/*
 
-# Nextcloud files will be handled by the base image
-
-# Copiar scripts de migração e restore
+# Copiar scripts de migração, restore e auto-instalação
 COPY init-migration.sh /usr/local/bin/
 COPY restore-database.sh /usr/local/bin/
 COPY backup-database.sh /usr/local/bin/
+COPY auto-install.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/init-migration.sh \
     && chmod +x /usr/local/bin/restore-database.sh \
-    && chmod +x /usr/local/bin/backup-database.sh
+    && chmod +x /usr/local/bin/backup-database.sh \
+    && chmod +x /usr/local/bin/auto-install.sh
 
 # Criar diretórios para backups e restores
 RUN mkdir -p /opt/backups \
@@ -32,7 +32,7 @@ RUN chown -R www-data:www-data /var/www/html \
 # Expor porta 80
 EXPOSE 80
 
-# Script de inicialização com migrações e restore
+# Script de inicialização com migrações, restore e auto-instalação
 COPY docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
