@@ -5,11 +5,20 @@ set -e
 
 echo "=== INICIANDO NEXTCLOUD COM MIGRAÇÕES E RESTORE ==="
 
-# Verificar se deve fazer restore de backup
+# Verificar se deve fazer restore de backup preservando timestamps
 if [ -n "$RESTORE_BACKUP_FILE" ] && [ -f "$RESTORE_BACKUP_FILE" ]; then
     echo "Restaurando backup do banco de dados..."
     /usr/local/bin/restore-database.sh -f "$RESTORE_BACKUP_FILE" --force
     echo "Restore concluído!"
+fi
+
+# Verificar se deve restaurar arquivos preservando timestamps
+if [ -n "$RESTORE_DATA_FILE" ] && [ -f "$RESTORE_DATA_FILE" ]; then
+    echo "Restaurando arquivos preservando timestamps..."
+    cd /var/www/html/data
+    tar -xzpf "$RESTORE_DATA_FILE"
+    chown -R www-data:www-data /var/www/html/data
+    echo "Arquivos restaurados com timestamps preservados!"
 fi
 
 # Executar migrações se as variáveis de banco estiverem definidas

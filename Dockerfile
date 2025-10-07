@@ -7,6 +7,7 @@ RUN apt-get update && apt-get install -y \
     curl \
     wget \
     unzip \
+    rsync \
     && rm -rf /var/lib/apt/lists/*
 
 # Copiar scripts de migração, restore e auto-instalação
@@ -25,9 +26,8 @@ RUN mkdir -p /opt/backups \
     && chmod 755 /opt/backups \
     && chmod 755 /opt/restores
 
-# Definir permissões corretas
-RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 755 /var/www/html
+# Definir permissões corretas preservando timestamps
+RUN chown -R www-data:www-data /var/www/html
 
 # Expor porta 80
 EXPOSE 80

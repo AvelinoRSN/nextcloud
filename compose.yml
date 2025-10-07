@@ -2,14 +2,14 @@ services:
   nc:
     build: .
     environment:
-      - POSTGRES_HOST=next-cloud-db-v3.co308c48ebbz.us-east-1.rds.amazonaws.com
-      - POSTGRES_PASSWORD=5PCTu2aNuilrpWPs2u8V
+      - POSTGRES_HOST=next-cloud-db-v4.co308c48ebbz.us-east-1.rds.amazonaws.com
+      - POSTGRES_PASSWORD=JKkPFqqQdHgJlfCMUzsJ
       - POSTGRES_DB=nextcloud
       - POSTGRES_USER=postgres
       - POSTGRES_USER_PASSWORD=5PCTu2aNuilrpWPs2u8V
       - NEXTCLOUD_ADMIN_USER=admin
       - NEXTCLOUD_ADMIN_PASSWORD=admin123
-      - NEXTCLOUD_TRUSTED_DOMAINS=localhost 3.84.201.243
+      - NEXTCLOUD_TRUSTED_DOMAINS=localhost 100.27.196.82
       - AUTO_INSTALL=true
       - POSTGRES_SSL_MODE=disable
     ports:

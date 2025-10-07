@@ -9,13 +9,14 @@ check_ready() {
         return 1
     fi
     
-    # Verifica se responde HTTP 200
-    if ! curl -s -o /dev/null -w "%{http_code}" http://localhost | grep -q "200"; then
+    # Verifica se responde HTTP (200, 302, etc - qualquer resposta válida)
+    http_code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost)
+    if [[ ! "$http_code" =~ ^[23] ]]; then
         return 1
     fi
     
     # Verifica se a página de login carrega (não é erro 500)
-    response=$(curl -s http://localhost)
+    response=$(curl -sL http://localhost)
     if echo "$response" | grep -q "Internal Server Error\|Fatal error\|Exception"; then
         return 1
     fi
@@ -44,7 +45,7 @@ while ! check_ready; do
 done
 
 # Obter IP da máquina
-IP="3.84.201.243"
+IP=$(curl -s http://checkip.amazonaws.com)
 
 echo ""
 echo "✅ NEXTCLOUD ESTÁ PRONTO!"
