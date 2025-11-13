@@ -1,22 +1,16 @@
+  GNU nano 8.3                                                         compose.yml
 services:
   nc:
-    build: .
+    image: nextcloud:apache
     environment:
-      - POSTGRES_HOST=next-cloud-db-v4.co308c48ebbz.us-east-1.rds.amazonaws.com
-      - POSTGRES_PASSWORD=JKkPFqqQdHgJlfCMUzsJ
+      - POSTGRES_HOST=aurora-postgres-dev.cluster-cw5ci80y8c8z.us-east-1.rds.amazonaws.com
+      - POSTGRES_PASSWORD=MySecurePass123!
       - POSTGRES_DB=nextcloud
-      - POSTGRES_USER=postgres
-      - POSTGRES_USER_PASSWORD=5PCTu2aNuilrpWPs2u8V
-      - NEXTCLOUD_ADMIN_USER=admin
-      - NEXTCLOUD_ADMIN_PASSWORD=admin123
-      - NEXTCLOUD_TRUSTED_DOMAINS=localhost 100.27.196.82
-      - AUTO_INSTALL=true
-      - POSTGRES_SSL_MODE=disable
+      - POSTGRES_USER=nextcloud
+      - NEXTCLOUD_TRUSTED_DOMAINS=*
     ports:
       - 80:80
     restart: always
     volumes:
-      - nc_data:/var/www/html
-
-volumes:
-  nc_data:
+      - /mnt/efs/nextcloud:/var/www/html
+    user: "33:33"
