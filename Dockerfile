@@ -1,40 +1,20 @@
-# Dockerfile unificado para Nextcloud com migrações e restore
 FROM nextcloud:apache
 
-# Instalar dependências necessárias
+# Dependências adicionais
 RUN apt-get update && apt-get install -y \
-    postgresql-client \
-    curl \
-    wget \
-    unzip \
-    rsync \
+    imagemagick \
+    ffmpeg \
+    mariadb-client \
+    redis-tools \
+    ghostscript \
+    libreoffice \
     && rm -rf /var/lib/apt/lists/*
 
-# Copiar scripts de migração, restore e auto-instalação
-COPY init-migration.sh /usr/local/bin/
-COPY restore-database.sh /usr/local/bin/
-COPY backup-database.sh /usr/local/bin/
-COPY auto-install.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/init-migration.sh \
-    && chmod +x /usr/local/bin/restore-database.sh \
-    && chmod +x /usr/local/bin/backup-database.sh \
-    && chmod +x /usr/local/bin/auto-install.sh
+# Ajustes PHP para uploads grandes
+RUN echo 'upload_max_filesize = 2G' >> /usr/local/etc/php/conf.d/uploads.ini \
+    && echo 'post_max_size = 2G' >> /usr/local/etc/php/conf.d/uploads.ini \
+    && echo 'memory_limit = 512M' >> /usr/local/etc/php/conf.d/uploads.ini \
+    && echo 'max_execution_time = 300' >> /usr/local/etc/php/conf.d/uploads.ini
 
-# Criar diretórios para backups e restores
-RUN mkdir -p /opt/backups \
-    && mkdir -p /opt/restores \
-    && chmod 755 /opt/backups \
-    && chmod 755 /opt/restores
-
-# Definir permissões corretas preservando timestamps
-RUN chown -R www-data:www-data /var/www/html
-
-# Expor porta 80
-EXPOSE 80
-
-# Script de inicialização com migrações, restore e auto-instalação
-COPY docker-entrypoint.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
-
-ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+ENTRYPOINT ["/entrypoint.sh"]
 CMD ["apache2-foreground"]
